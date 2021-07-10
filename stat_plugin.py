@@ -72,7 +72,7 @@ def script_properties():
     props = obs.obs_properties_create()
     obs.obs_properties_add_text(props, 'text', 'Displayed text', obs.OBS_TEXT_DEFAULT)
     obs.obs_properties_add_int(props, 'goalCount', 'Number used as goal amount', 1, 2147483647, 1)
-    obs.obs_properties_add_int(props, 'timespan', 'Seconds timespan to sample average', 1, 2147483647, 60)
+    obs.obs_properties_add_int(props, 'timespan', 'Seconds time span to sample average', 1, 2147483647, 60)
     obs.obs_properties_add_bool(props, 'shouldSync',
                                 'Should stats be synced to actual value instead of counting from 0?')
     return props
@@ -86,7 +86,7 @@ def script_description():
            '%s will get replaced by the stat value\n' \
            '%g will get replaced by the defined goal\n' \
            '%p will get replaced by 2 digit % based on value and goal\n' \
-           '%h will get replaced by the speed per h sampled over timespan'
+           '%h will get replaced by the speed per h sampled over time span'
     return desc
 
 
@@ -118,11 +118,6 @@ def game_tick():
     for value in list(last_values):
         if value < now - sample_time:
             del last_values[value]
-
-    # with get_source_settings(source) as settings:
-    #     if settings is None:
-    #         return
-    #     current_text = obs.obs_data_get_string(settings, 'text')
 
     if select.select([server_socket], [], [], 0)[0]:
         (s, a) = server_socket.accept()
@@ -164,6 +159,7 @@ def game_tick():
         average = 0
         if (current_count and goal_count):
             percent = round(max(current_count, 1) / (goal_count / 100), 2)
+        percent = str('{:05.2f}'.format(percent))
         if (last_values):
             for value_list in last_values.values():
                 if (value_list):
@@ -173,5 +169,5 @@ def game_tick():
         average = str('{:05.2f}'.format(round(average, 2)))
         obs.obs_data_set_string(settings, 'text',
                                 text_template.replace('%s', str(current_count)).replace('%g', str(goal_count)).replace(
-                                    '%p', str(percent) + '%').replace('%h', average + 'k per hour'))
+                                    '%p', percent + '%').replace('%h', average))
         obs.obs_source_update(source, settings)
